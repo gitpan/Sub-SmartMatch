@@ -7,9 +7,11 @@ use Test::More 'no_plan';
 
 use ok 'Sub::SmartMatch';
 
+sub any () { sub { 1 } }
+
 multi "fact", [ 0 ], sub { 1 };
 
-multi "fact", sub () { 1 }, sub {
+multi "fact", any, sub {
 	my $n = shift;
 	return $n * fact($n - 1);
 };
@@ -51,7 +53,7 @@ SKIP: {
 		use Sub::SmartMatch;
 
 		multi is_object => [ object() ] => sub { 1 };
-		multi is_object => [ class()  ]  => sub { 0 };
+		multi is_object => [ class()  ] => sub { 0 };
 	}
 
 	my $foo = bless {}, "Foo";
@@ -65,4 +67,26 @@ SKIP: {
 	ok( $e, "got an error from calling with no args" );
 	like( $e, qr/no variant found/i, "no variant found error" );
 }
+
+multi array_length => [ ], sub { 0 };
+multi array_length => any, sub {
+	my ( $head, @tail ) = @_;
+	1 + array_length(@tail);
+};
+
+is( array_length(),     0, "array length is 0" );
+is( array_length(1),    1, "array length is 0" );
+is( array_length(1, 2), 2, "array length is 0" );
+
+multi odd  => [ 0 ]   => sub { 0 };
+multi even => [ 0 ]   => sub { 1 };
+
+multi odd  => [ any ] => sub { even( $_[0] - 1 ) };
+multi even => [ any ] => sub { odd(  $_[0] - 1 ) };
+
+ok( odd(1), "1 is odd" );
+ok( !odd(0), "0 is not" );
+ok( even(0), "0 is even" );
+ok( !even(1), "1 is not" );
+ok( !even(5), "5 is not" );
 

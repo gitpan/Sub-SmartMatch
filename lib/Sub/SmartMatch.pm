@@ -10,7 +10,7 @@ use 5.010;
 use Carp qw(croak);
 use Scalar::Util qw(reftype);
 
-our $VERSION = "0.01";
+our $VERSION = "0.02";
 
 use base qw(Exporter);
 
@@ -80,7 +80,7 @@ sub multi ($$$) {
 	my $exact = ref($case) && ref($case) eq __PACKAGE__ . "::Exact";
 	$case = $$case if $exact;
 
-	my $partial_match = not($exact) && ref($case) && ref($case) eq 'ARRAY';
+	my $partial_match = not($exact) && ref($case) && ref($case) eq 'ARRAY' && @$case;
 
 	push @{ $variants{$name} }, [ $partial_match, $case, $body ];
 
@@ -198,11 +198,11 @@ This doesn't do argument binding, just value matching.
 
 To define methods use C<SmartMatch::Sugar>'s C<object> test:
 
-	multi new [ class, args ] => sub {
+	multi new [ class ]  => sub {
 		 # invoked as a class method
 	}
 
-	multi new [ object, args ] => sub {
+	multi new [ object ] => sub {
 		# invoked as an object method
 		# this should clone, i guess
 	}
@@ -228,7 +228,8 @@ the subroutine.
 As a special case to allow variable arguments at the end of the list, if
 C<$case> is an array reference it will only be matched against the slice of
 C<@_> with the corresponding number of elements, not all of C<@_>. Use
-C<exactly> to do a match on all of C<@_>.
+C<exactly> to do a match on all of C<@_>. This does not apply to an empty array
+(otherwise that would always match, instead of matching empty arrays).
 
 =item multi_default $name, &body
 
